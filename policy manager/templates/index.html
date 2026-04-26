@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Policy Manager</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; background: #f7f8fa; color: #1f2937; }
+      .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+      h1, h2 { margin-top: 0; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+      label { display: block; font-size: 12px; color: #4b5563; margin-bottom: 4px; }
+      input { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+      button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; margin-right: 8px; }
+      button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+      .status { font-weight: 700; }
+      table { border-collapse: collapse; width: 100%; font-size: 12px; }
+      th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+      th { background: #f9fafb; }
+    </style>
+  </head>
+  <body>
+    <h1>Policy Manager - SNMP Monitor</h1>
+
+    <div class="card">
+      <h2>Monitoring Configuration</h2>
+      <form method="post" action="/start">
+        <div class="grid">
+          <div>
+            <label for="host">Host/IP</label>
+            <input id="host" name="host" required value="{{ config.host }}">
+          </div>
+          <div>
+            <label for="community">SNMP Community</label>
+            <input id="community" name="community" required value="{{ config.community }}">
+          </div>
+          <div>
+            <label for="if_index">Interface Index</label>
+            <input id="if_index" name="if_index" type="number" min="1" required value="{{ config.if_index }}">
+          </div>
+          <div>
+            <label for="port">SNMP Port</label>
+            <input id="port" name="port" type="number" min="1" required value="{{ config.port }}">
+          </div>
+          <div>
+            <label for="timeout">Timeout (s)</label>
+            <input id="timeout" name="timeout" type="number" min="1" required value="{{ config.timeout }}">
+          </div>
+          <div>
+            <label for="retries">Retries</label>
+            <input id="retries" name="retries" type="number" min="0" required value="{{ config.retries }}">
+          </div>
+          <div>
+            <label for="sample_window_seconds">Sample Window (s)</label>
+            <input id="sample_window_seconds" name="sample_window_seconds" type="number" min="1" step="0.1" required value="{{ config.sample_window_seconds }}">
+          </div>
+          <div>
+            <label for="poll_interval_seconds">Poll Interval (s)</label>
+            <input id="poll_interval_seconds" name="poll_interval_seconds" type="number" min="1" step="0.1" required value="{{ config.poll_interval_seconds }}">
+          </div>
+        </div>
+        <div style="margin-top: 12px;">
+          <button class="primary" type="submit">Start Monitoring</button>
+        </div>
+      </form>
+      <div style="margin-top: 12px;">
+        <form method="post" action="/stop" style="display:inline;">
+          <button type="submit">Stop</button>
+        </form>
+        <form method="post" action="/clear" style="display:inline;">
+          <button type="submit">Clear Stored Samples</button>
+        </form>
+      </div>
+      <p>
+        Status:
+        <span class="status">{{ poller_status.state }}</span>
+        {% if poller_status.last_error %}
+          - Last error: {{ poller_status.last_error }}
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Latest Samples (Most Recent First)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp (UTC)</th>
+            <th>Host</th>
+            <th>IfIndex</th>
+            <th>In bps</th>
+            <th>Out bps</th>
+            <th>In Util %</th>
+            <th>Out Util %</th>
+            <th>Interface Speed (bps)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in samples %}
+            <tr>
+              <td>{{ s.timestamp_utc }}</td>
+              <td>{{ s.host }}</td>
+              <td>{{ s.if_index }}</td>
+              <td>{{ "%.2f"|format(s.in_bps) }}</td>
+              <td>{{ "%.2f"|format(s.out_bps) }}</td>
+              <td>{{ "%.2f"|format(s.in_utilization_pct) }}</td>
+              <td>{{ "%.2f"|format(s.out_utilization_pct) }}</td>
+              <td>{{ s.interface_speed_bps }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8">No samples collected yet.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+  </html>
